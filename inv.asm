@@ -834,6 +834,23 @@ wait_vblank
             cmp $14
             beq wait_vblank
             rts
+patchshot
+            sta L00AE              ; 85 AE
+            tax                    ; AA
+startvol equ 7
+            mva #startvol AUDC4
+            mva #2 AUDF4
+            mva #[startvol<<2] shotvolume
+            rts
+shotvolume
+            dta 0
+patchvbi
+            lda shotvolume
+            seq:dec shotvolume
+            :2 lsr @
+            sta AUDC4
+            jmp XITVBV             ; 4C 62 E4
+
             ini $2000
             org $A000
             els
@@ -1222,7 +1239,10 @@ LA35A       lda L0099              ; A5 99
             sta L00A1              ; 85 A1
 LA364       inc L0099              ; E6 99
             sta HITCLR             ; 8D 1E D0
-            jmp XITVBV             ; 4C 62 E4
+            ; patch VBI exit
+            ;jmp XITVBV             ; 4C 62 E4
+            jmp patchvbi
+
             pha                    ; 48
             txa                    ; 8A
             pha                    ; 48
@@ -3229,8 +3249,11 @@ LB346       lda L0082              ; A5 82
             bne LB345              ; D0 F0
 LB355       sta ATRACT             ; 85 4D
             lda #$C1               ; A9 C1
-            sta L00AE              ; 85 AE
-            tax                    ; AA
+            ; patch shot
+            ;sta L00AE              ; 85 AE
+            ;tax                    ; AA
+            jsr patchshot
+
             ldy #$07               ; A0 07
             lda #$02               ; A9 02
 LB360       sta L3300,X            ; 9D 00 33
