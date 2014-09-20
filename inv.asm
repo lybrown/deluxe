@@ -845,11 +845,11 @@ startvol equ 7
 shotvolume
             dta 0
 patchvbi
-            lda $B2
-            bne patchvbidone
             lda shotvolume
             seq:dec shotvolume
             :2 lsr @
+            ldx $B2
+            bne patchvbidone
             sta AUDC4
 patchvbidone
             jmp XITVBV             ; 4C 62 E4
