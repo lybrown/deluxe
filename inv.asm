@@ -835,24 +835,80 @@ wait_vblank
             beq wait_vblank
             rts
 patchshot
+            lda L0082              ; A5 82
+            beq shotdone
+            lda LOMEM              ; A5 80
+            cmp #$03               ; C9 03
+            beq doshot
+            ldy shotmode
+            bne single
+auto
+            lda STRIG0              ; AD 84 02
+            beq doshot
+            jmp shotdone
+single
+            lda STRIG0
+            cmp:sta lasttrig
+            bcs shotdone
+doshot      sta ATRACT             ; 85 4D
+startvol equ 3
+shottimbre equ $A0
+shotpower equ 4
+shotsteps equ 44
+            mvx #0 shotindex
+            mva shotvolume,x AUDC4
+            mva shotperiod,x AUDF4
+            lda #$C1               ; A9 C1
             sta L00AE              ; 85 AE
             tax                    ; AA
-startvol equ 7
-            mva #startvol AUDC4
-            mva #2 AUDF4
-            mva #[startvol<<2] shotvolume
+            jmp drawinitialshot
+shotdone
             rts
-shotvolume
+shotmode
             dta 0
+lasttrig
+            dta 1
+lastkey
+            dta 4
+shotindex
+            dta 0
+shotvolume
+            :shotsteps/4-1 dta 3|shottimbre
+            :shotsteps/4 dta 2|shottimbre
+            :shotsteps/4 dta 1|shottimbre
+            :shotsteps/4 dta 1|shottimbre
+            dta 0|shottimbre
+shotperiod
+            :shotsteps*3/4 dta 6
+            :shotsteps*1/4 dta 7
 patchvbi
-            lda shotvolume
-            seq:dec shotvolume
-            :2 lsr @
-            ldx $B2
+            lda SKSTAT
+            and #4
+            cmp:sta lastkey
+            bcs donekeyscan
+            lda KBCODE
+            cmp #$3F
+            bne donekeyscan
+            mva #$13 $C0
+            mva #1 $BF
+toggleshotmode
+            eor:sta shotmode
+donekeyscan
+            lda $B2
             bne patchvbidone
-            sta AUDC4
+            lda $B1
+            beq quiet
+            ldy shotindex
+            inc shotindex
+            mva shotvolume,y AUDC4
+            mva shotperiod,y AUDF4
 patchvbidone
             jmp XITVBV             ; 4C 62 E4
+quiet
+            mva #0 AUDC4
+            ;mva #$24 COLBK
+            jmp XITVBV
+
 
             ini $2000
             org $A000
@@ -3243,8 +3299,12 @@ LB339       lda L3300,X            ; BD 00 33
             dey                    ; 88
             bpl LB339              ; 10 F4
 LB345       rts                    ; 60
-LB346       lda L0082              ; A5 82
-            beq LB345              ; F0 FB
+LB346       ;lda L0082              ; A5 82
+            ;beq LB345              ; F0 FB
+            ; new patch shot
+            jmp patchshot
+            nop
+
             lda LOMEM              ; A5 80
             cmp #$03               ; C9 03
             beq LB355              ; F0 05
@@ -3252,11 +3312,9 @@ LB346       lda L0082              ; A5 82
             bne LB345              ; D0 F0
 LB355       sta ATRACT             ; 85 4D
             lda #$C1               ; A9 C1
-            ; patch shot
-            ;sta L00AE              ; 85 AE
-            ;tax                    ; AA
-            jsr patchshot
-
+            sta L00AE              ; 85 AE
+            tax                    ; AA
+drawinitialshot
             ldy #$07               ; A0 07
             lda #$02               ; A9 02
 LB360       sta L3300,X            ; 9D 00 33
