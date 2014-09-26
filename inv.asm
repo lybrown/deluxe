@@ -2330,7 +2330,9 @@ LABBE       lda L00C1              ; A5 C1
             sta L009F              ; 85 9F
             lda #$07               ; A9 07
             sta L009A              ; 85 9A
-            lda #$06               ; A9 06
+            ; starting dum dum volume
+            ;lda #$06               ; A9 06
+            lda #10               ; A9 06
             sta L00A4              ; 85 A4
             ldx L0097              ; A6 97
             inc L008B,X            ; F6 8B
@@ -4461,9 +4463,12 @@ LBC5A       dta $00,$03,$03
 LBC5F       dta $00
             ora (CASINI,X)         ; 01 02
             dta $02,$04
-LBC64       dta $00,$07
-            php                    ; 08
-            ora #$0A               ; 09 0A
+            ; $BC64 = dum dum volume table
+LBC64
+            dta 0,12,13,14,15
+;LBC64       dta $00,$07
+;            php                    ; 08
+;            ora #$0A               ; 09 0A
 LBC69       sty LC8AA              ; 8C AA C8
             inc $00                ; E6 00
             dta $03,$00
